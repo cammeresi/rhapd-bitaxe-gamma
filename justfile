@@ -3,6 +3,7 @@
 
 ESPUP_VERSION := "0.17.1"
 ESPFLASH_VERSION := "4.4.0"
+ESP_RUST_VERSION := "1.98.0.0"
 
 _default:
     @just --list --unsorted
@@ -13,18 +14,19 @@ setup-tools:
     @if command -v espup >/dev/null; then \
         echo "espup already installed; using the system copy"; \
     else \
-        RUSTUP_TOOLCHAIN=stable cargo install --locked espup --version {{ESPUP_VERSION}}; \
+        cargo +stable install --locked espup --version {{ESPUP_VERSION}}; \
     fi
-    @if [ -d "$(rustup show home)/toolchains/esp" ]; then \
-        echo "esp toolchain already installed; run 'espup update' to upgrade it"; \
+    @if rustc +esp --version 2>/dev/null | grep -q "({{ESP_RUST_VERSION}})"; then \
+        echo "esp toolchain {{ESP_RUST_VERSION}} already installed"; \
     else \
         f=$(mktemp) \
-        && { espup install --targets esp32s3 --export-file "$f"; s=$?; rm -f "$f"; exit $s; }; \
+        && { espup install --targets esp32s3 --toolchain-version {{ESP_RUST_VERSION}} --export-file "$f"; \
+             s=$?; rm -f "$f"; exit $s; }; \
     fi
     @if command -v cargo-espflash >/dev/null; then \
         echo "cargo-espflash already installed; using the system copy"; \
     else \
-        RUSTUP_TOOLCHAIN=stable cargo install --locked cargo-espflash --version {{ESPFLASH_VERSION}}; \
+        cargo +stable install --locked cargo-espflash --version {{ESPFLASH_VERSION}}; \
     fi
 
 [group('dev')]
