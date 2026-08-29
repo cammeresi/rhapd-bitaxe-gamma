@@ -36,33 +36,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bitaxe-raw"
-version = "0.0.1"
-dependencies = [
- "const-murmur3",
- "defmt 0.3.100",
- "defmt-rtt",
- "embassy-embedded-hal 0.3.2",
- "embassy-executor",
- "embassy-futures",
- "embassy-sync 0.6.2",
- "embassy-time",
- "embassy-usb",
- "embedded-io-async",
- "esp-alloc",
- "esp-bootloader-esp-idf",
- "esp-hal",
- "esp-hal-embassy",
- "heapless",
- "hex",
- "panic-rtt-target",
- "portable-atomic",
- "rtt-target",
- "serde",
- "static_cell",
-]
-
-[[package]]
 name = "bitfield"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1306,6 +1279,33 @@ name = "rand_core"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4f1b3bc831f92381018fd9c6350b917c7b21f1eed35a65a51900e0e55a3d7afa"
+
+[[package]]
+name = "rhapd-bitaxe-gamma"
+version = "0.0.1"
+dependencies = [
+ "const-murmur3",
+ "defmt 0.3.100",
+ "defmt-rtt",
+ "embassy-embedded-hal 0.3.2",
+ "embassy-executor",
+ "embassy-futures",
+ "embassy-sync 0.6.2",
+ "embassy-time",
+ "embassy-usb",
+ "embedded-io-async",
+ "esp-alloc",
+ "esp-bootloader-esp-idf",
+ "esp-hal",
+ "esp-hal-embassy",
+ "heapless",
+ "hex",
+ "panic-rtt-target",
+ "portable-atomic",
+ "rtt-target",
+ "serde",
+ "static_cell",
+]
 
 [[package]]
 name = "riscv"

@@ -1,6 +1,20 @@
-# bitaxe-raw usbserial Firmware
+# RHAP-D for the Bitaxe Gamma
 
-bitaxe-raw is firmware for the ESP32S3 on the bitaxe series boards. It will pass through ASIC UART, Board I2C, GPIO and ADC over usbserial. This can be used for research, testing and debugging.
+This firmware implements the Raw Hardware Access Protocol (RHAP) on the
+ESP32-S3 of the Bitaxe Gamma. It passes ASIC UART, board I2C, GPIO, and
+ADC through to a host over usbserial. It displaces the stock firmware,
+esp-miner, and does no mining of its own.
+
+RHAP-D is the device role of RHAP. The host role belongs to the program
+at the other end of the USB connection, which drives the board through
+this firmware. Mujina takes that role to run a Bitaxe as a hashboard.
+Research, testing, and debugging use the same access.
+
+This firmware continues [bitaxe-raw], the original implementation of
+what has become RHAP. Unlike bitaxe-raw, which covers several boards,
+this repository targets only one.
+
+[bitaxe-raw]: https://github.com/bitaxeorg/bitaxe-raw
 
 ## Developing
 
@@ -43,7 +57,7 @@ cargo espflash flash --release --chip esp32s3
 
 espflash isn't restarting the ESP32 after flashing. Press the Bitaxe `RESET` button to boot the newly flashed firmware.
 
-After programming bitaxe-raw to your Bitaxe, if you ever want to change the firmware again you'll need to put the ESP32 into the bootloader. This can be done by holding the `BOOT` button as you attach power.
+After programming this firmware to your Bitaxe, if you ever want to change the firmware again you'll need to put the ESP32 into the bootloader. This can be done by holding the `BOOT` button as you attach power.
 
 ## Running
 When connected, this usbserial firmware will create two serial ports. Usually the first serial port is "control serial" like I2C, GPIO, and ADC. The second serial port is "data serial" and is pass through UART.
