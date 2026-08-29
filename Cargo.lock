@@ -92,12 +92,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801"
 
 [[package]]
-name = "const-murmur3"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "98f0dc91dbc2d9023898decbb4002f24e4081c829d26c157863e20332ff10ee2"
-
-[[package]]
 name = "critical-section"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1284,7 +1278,6 @@ checksum = "4f1b3bc831f92381018fd9c6350b917c7b21f1eed35a65a51900e0e55a3d7afa"
 name = "rhapd-bitaxe-gamma"
 version = "0.0.1"
 dependencies = [
- "const-murmur3",
  "defmt 0.3.100",
  "defmt-rtt",
  "embassy-embedded-hal 0.3.2",

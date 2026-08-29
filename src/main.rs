@@ -25,13 +25,12 @@ const VERSION: u16 = 0x0001;
 static MANUFACTURER: &str = "OSMU";
 static PRODUCT: &str = "Bitaxe";
 
-/// Return a unique serial number for this device by hashing its MAC address
+/// Returns this device's serial number, the hex-encoded MAC address.
 fn serial_number() -> &'static str {
     let mac_address = esp_hal::efuse::Efuse::mac_address();
-    static SERIAL_NUMBER_BUF: StaticCell<[u8; 8]> = StaticCell::new();
-    let sn = const_murmur3::murmur3_32(&mac_address, 0);
-    let buf = SERIAL_NUMBER_BUF.init([0; 8]);
-    hex::encode_to_slice(sn.to_le_bytes(), &mut buf[..]).unwrap();
+    static SERIAL_NUMBER_BUF: StaticCell<[u8; 12]> = StaticCell::new();
+    let buf = SERIAL_NUMBER_BUF.init([0; 12]);
+    hex::encode_to_slice(mac_address, &mut buf[..]).unwrap();
     unsafe { core::str::from_utf8_unchecked(buf) }
 }
 

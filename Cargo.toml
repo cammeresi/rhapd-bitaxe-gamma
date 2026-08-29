@@ -14,7 +14,6 @@ idf_ver = "v5.4.1"
 min_efuse_blk_rev_full = 0
 
 [dependencies]
-const-murmur3 = "0.2.1"
 defmt = "0.3.10"
 defmt-rtt = "0.4.1"
 esp-hal-embassy = { version = "=0.9.1", features = ["esp32s3"] }
