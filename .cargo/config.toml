@@ -2,6 +2,11 @@
 runner = "probe-rs run --chip=esp32s3 --always-print-stacktrace --no-location --catch-hardfault"
 #runner = "espflash flash --monitor"
 
+[target.xtensa-esp32s3-none-elf]
+# Resolved relative to the repository root. The script finds the
+# Xtensa GCC inside the esp toolchain, so no shell setup is needed.
+linker = "tools/xtensa-esp32s3-elf-gcc"
+
 [build]
 target = "xtensa-esp32s3-none-elf"
 

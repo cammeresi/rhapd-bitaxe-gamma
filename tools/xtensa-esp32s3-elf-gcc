@@ -1,0 +1,18 @@
+#!/bin/sh
+# Link driver for the xtensa-esp32s3-none-elf target. Cargo names
+# this script as the linker, so the GCC that espup installs inside
+# the esp toolchain runs without its directory on the caller's PATH.
+# When more than one crosstool release is installed, the newest wins.
+set -eu
+
+root="${RUSTUP_HOME:-$HOME/.rustup}/toolchains/esp/xtensa-esp-elf"
+gcc=$(ls -d "$root"/*/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc 2>/dev/null \
+    | sort -V | tail -n 1)
+
+if [ -z "$gcc" ]; then
+    echo "error: xtensa-esp32s3-elf-gcc not found under $root;" \
+         "run 'just setup-tools'" >&2
+    exit 1
+fi
+
+exec "$gcc" "$@"

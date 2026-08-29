@@ -18,46 +18,52 @@ this repository targets only one.
 
 ## Developing
 
-Install Rust:
+The build needs rustup and [just]. Install rustup from
+[rustup.rs], then install just:
 
 ```bash
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+cargo install just --locked
 ```
 
-### Install espup
+Run `just` with no arguments to list the recipes.
+
+[just]: https://just.systems/
+[rustup.rs]: https://rustup.rs/
+
+### Install the toolchain
 
 ```bash
-RUSTUP_TOOLCHAIN=stable cargo install espup --locked
+just setup-tools
 ```
+
+This installs [espup], the `esp` Rust toolchain, which has the
+Xtensa backend, and [espflash]. `rust-toolchain.toml` selects the
+`esp` toolchain inside this directory and leaves the default
+toolchain alone elsewhere. Cargo links with a wrapper script in
+`tools/` that finds the Xtensa GCC inside the toolchain, so no
+shell setup is needed and espup's export file is discarded.
+
+[espup]: https://github.com/esp-rs/espup
+[espflash]: https://github.com/esp-rs/espflash
+
+### Build the firmware
 
 ```bash
-espup install
+just build
 ```
 
-### Install flashing tools
-```bash
-cargo install cargo-espflash espflash --locked
-```
-
-For building and flashing over USB:
+### Flash the device
 
 ```bash
-. $HOME/export-esp.sh
+just flash
 ```
 
-### Build the latest firmware:
-```bash
-cargo build --release
-```
+espflash does not restart the ESP32-S3 after flashing. Press the
+Bitaxe `RESET` button to boot the new firmware.
 
-### Flash the device:
-```bash
-cargo espflash flash --release --chip esp32s3
-```
-
-espflash isn't restarting the ESP32 after flashing. Press the Bitaxe `RESET` button to boot the newly flashed firmware.
-
-After programming this firmware to your Bitaxe, if you ever want to change the firmware again you'll need to put the ESP32 into the bootloader. This can be done by holding the `BOOT` button as you attach power.
+Once this firmware runs, the ESP32-S3 must be put into the
+bootloader by hand before it can be flashed again. Hold the `BOOT`
+button while attaching power.
 
 ## Running
 When connected, this usbserial firmware will create two serial ports. Usually the first serial port is "control serial" like I2C, GPIO, and ADC. The second serial port is "data serial" and is pass through UART.
