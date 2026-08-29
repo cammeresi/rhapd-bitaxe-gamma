@@ -22,8 +22,14 @@ pub type UsbDevice = embassy_usb::UsbDevice<'static, UsbDriver>;
 
 const VERSION: u16 = 0x0001;
 
+/// Vendor ID of pid.codes, which allocates product IDs to open
+/// source hardware projects.
+const VID: u16 = 0x1209;
+/// Product ID allocated to Bitaxe under the pid.codes vendor ID.
+const PID: u16 = 0x6102;
+
 static MANUFACTURER: &str = "OSMU";
-static PRODUCT: &str = "Bitaxe";
+static PRODUCT: &str = "Bitaxe Gamma RHAP-D";
 
 /// Returns this device's serial number, the hex-encoded MAC address.
 fn serial_number() -> &'static str {
@@ -53,7 +59,7 @@ async fn main(spawner: Spawner) {
     //esp_alloc::heap_allocator!(size: 72 * 1024);
 
     let usb_config = {
-        let mut config = embassy_usb::Config::new(0xc0de, 0xcafe);
+        let mut config = embassy_usb::Config::new(VID, PID);
         config.device_release = VERSION;
         config.manufacturer = Some(MANUFACTURER);
         config.product = Some(PRODUCT);
