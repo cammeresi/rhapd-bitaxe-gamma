@@ -28,6 +28,9 @@ struct Command {
     inner: CommandInner,
 }
 
+// The I2C commands hold their data buffer inline; boxing it would need
+// an allocator this firmware does not have.
+#[allow(clippy::large_enum_variant)]
 #[derive(defmt::Format)]
 enum CommandInner {
     I2c(i2c::Command),

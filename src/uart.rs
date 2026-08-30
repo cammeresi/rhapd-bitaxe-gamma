@@ -25,26 +25,20 @@ impl From<EndpointError> for UartTaskError {
 }
 
 impl From<TxError> for UartTaskError {
-    fn from(val: TxError) -> Self {
-        match val {
-            _ => UartTaskError::UartError,
-        }
+    fn from(_: TxError) -> Self {
+        UartTaskError::UartError
     }
 }
 
 impl From<RxError> for UartTaskError {
-    fn from(val: RxError) -> Self {
-        match val {
-            _ => UartTaskError::UartError,
-        }
+    fn from(_: RxError) -> Self {
+        UartTaskError::UartError
     }
 }
 
 impl From<ConfigError> for UartTaskError {
-    fn from(val: ConfigError) -> Self {
-        match val {
-            _ => UartTaskError::UartError,
-        }
+    fn from(_: ConfigError) -> Self {
+        UartTaskError::UartError
     }
 }
 

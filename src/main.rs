@@ -124,7 +124,7 @@ async fn main(spawner: Spawner) {
     let mut adc_config = adc::AdcConfig::default();
     let vdd = adc_config.enable_pin(p.GPIO2, adc::Attenuation::_11dB);
     let adc = adc::Adc::new(p.ADC1, Default::default());
-    let adc_pins = control::adc::Pins { adc, vdd: vdd };
+    let adc_pins = control::adc::Pins { adc, vdd };
 
     unwrap!(spawner.spawn(usb_task(builder.build())));
     unwrap!(spawner.spawn(control::usb_task(control_class, i2c, gpio_pins, adc_pins)));
