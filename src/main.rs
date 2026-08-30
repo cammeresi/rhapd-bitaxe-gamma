@@ -13,6 +13,7 @@ use esp_hal::{analog::adc, clock::CpuClock, gpio, i2c, timer::systimer::SystemTi
 use static_cell::StaticCell;
 
 mod control;
+mod tps546;
 mod uart;
 
 pub type AsicUart = esp_hal::peripherals::UART1<'static>;
@@ -111,7 +112,7 @@ async fn main(spawner: Spawner) {
             .into_async()
     };
 
-    let i2c = {
+    let mut i2c = {
         let config = esp_hal::i2c::master::Config::default();
         let sda = p.GPIO47;
         let scl = p.GPIO48;
@@ -121,6 +122,10 @@ async fn main(spawner: Spawner) {
             .with_scl(scl)
             .into_async()
     };
+
+    if let Err(e) = tps546::turn_off(&mut i2c).await {
+        defmt::warn!("TPS546: core rail not turned off: {:?}", e);
+    }
 
     let gpio_pins = control::gpio::Pins {
         asic_resetn: gpio::Output::new(p.GPIO1, gpio::Level::Low, gpio::OutputConfig::default()),

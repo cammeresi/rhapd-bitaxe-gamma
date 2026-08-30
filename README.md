@@ -67,9 +67,13 @@ bootloader by hand before it can be flashed again. Hold the `BOOT`
 button while attaching power.
 
 ## Running
-When connected, this usbserial firmware will create two serial ports. Usually the first serial port is "control serial" like I2C, GPIO, and ADC. The second serial port is "data serial" and is pass through UART.
+When connected, this usbserial firmware will create two serial ports.
+Usually the first serial port is "control serial" like I2C, GPIO, and
+ADC. The second serial port is "data serial" and is pass through UART.
 
-After startup, the ASIC is held in reset by GPIO RST_N in order to minimize heat and power until the host device is connected and ready to use the ASIC. Enable it by setting RST_N High via the control serial port.
+After startup, the ASIC is held in reset by GPIO RST_N, and the
+firmware turns the TPS546 core voltage rail off, to minimize heat
+and power until the host is connected and ready to use the ASIC.
 
 ### Data Serial
 - Second serial port
