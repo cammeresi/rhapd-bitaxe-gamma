@@ -18,6 +18,9 @@ const GPIO_COMMAND: u8 = 6;
 pub mod adc;
 const ADC_COMMAND: u8 = 7;
 
+pub mod system;
+const SYSTEM_COMMAND: u8 = 9;
+
 // pub mod led;
 // const LED_COMMAND: u8 = 8;
 
@@ -36,6 +39,7 @@ enum CommandInner {
     I2c(i2c::Command),
     Gpio(gpio::Command),
     Adc(adc::Command),
+    System(system::Command),
     Error(CommandError),
 }
 
@@ -57,6 +61,11 @@ impl Command {
                 id,
                 bus: buf[1],
                 inner: CommandInner::Adc(adc::Command::from_bytes(&buf[3..])?),
+            }),
+            SYSTEM_COMMAND => Ok(Self {
+                id,
+                bus: buf[1],
+                inner: CommandInner::System(system::Command::from_bytes(&buf[3..])?),
             }),
             _ => Err(CommandError::Invalid),
         }
@@ -119,6 +128,7 @@ impl Controller {
                 CommandInner::I2c(cmd) => cmd.handle(self).await,
                 CommandInner::Gpio(cmd) => cmd.handle(self).await,
                 CommandInner::Adc(cmd) => cmd.handle(self).await,
+                CommandInner::System(cmd) => cmd.handle(self).await,
                 CommandInner::Error(err) => Err(err),
             };
 

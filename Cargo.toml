@@ -34,6 +34,7 @@ embassy-sync = { version = "0.6.2", features = ["defmt"] }
 embassy-usb = { version = "0.4.0", features = ["defmt"] }
 embassy-futures = { version = "0.1.1", features = ["defmt"] }
 embassy-embedded-hal = { version = "0.3.0", features = ["defmt"] }
+critical-section = "1"
 
 [profile.release]
 codegen-units = 1

@@ -59,11 +59,15 @@ just build
 just flash
 ```
 
-The board restarts into the new firmware when flashing completes.
+Once the firmware runs, the ESP32-S3 must be put into the
+bootloader before it can be flashed again. Either send the System
+"reboot to bootloader" command over the control serial port, or
+hold the `BOOT` button while attaching power.
 
-Once this firmware runs, the ESP32-S3 must be put into the
-bootloader before it can be flashed again. Hold the `BOOT` button
-while attaching power.
+After a flash that began with the `BOOT` button, the board restarts
+into the new firmware by itself. After one that began with the
+command, press `RESET`; espflash declines to reset a board that
+entered the bootloader without the button.
 
 ## Running
 When connected, this usbserial firmware will create two serial ports.
@@ -99,9 +103,10 @@ and power until the host is connected and ready to use the ASIC.
 3. command bus
 	- always 0x00 
 4. command page
-	- I2C:  0x05
-	- GPIO: 0x06
-	- ADC:  0x07
+	- I2C:    0x05
+	- GPIO:   0x06
+	- ADC:    0x07
+	- System: 0x09
 5. command 
 	- varies by command page. See below
 6. data
@@ -151,3 +156,22 @@ Example:
 
 - read VDD Pin: `06 00 00 00 07 50`
 
+**System**
+
+Commands require a magic payload to guard against accidental
+reboot from line noise or a framing desync. No response is
+sent; the host detects success by observing USB re-enumeration.
+
+Commands:
+
+- Reboot: 0x01 (magic: `DE AD BE EF`)
+- Reboot to bootloader: 0x02 (magic: `B0 07 10 AD`)
+
+Data:
+
+- [magic (4 bytes)]
+
+Examples:
+
+- Reboot: `0A 00 00 00 09 01 DE AD BE EF`
+- Reboot to bootloader: `0A 00 00 00 09 02 B0 07 10 AD`

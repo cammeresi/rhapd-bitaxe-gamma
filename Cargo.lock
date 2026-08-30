@@ -1278,6 +1278,7 @@ checksum = "4f1b3bc831f92381018fd9c6350b917c7b21f1eed35a65a51900e0e55a3d7afa"
 name = "rhapd-bitaxe-gamma"
 version = "0.0.1"
 dependencies = [
+ "critical-section",
  "defmt 0.3.100",
  "defmt-rtt",
  "embassy-embedded-hal 0.3.2",
