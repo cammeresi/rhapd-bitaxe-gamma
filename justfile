@@ -46,10 +46,10 @@ lint:
 build:
     cargo build --release
 
-# Build and flash the release firmware over USB (then press RESET)
+# Build and flash the release firmware over USB
 [group('dev')]
 flash: (_require "cargo-espflash")
-    cargo espflash flash --release --chip esp32s3
+    cargo espflash flash --release --chip esp32s3 --after watchdog-reset
 
 [private]
 _require tool:

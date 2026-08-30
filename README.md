@@ -59,12 +59,11 @@ just build
 just flash
 ```
 
-espflash does not restart the ESP32-S3 after flashing. Press the
-Bitaxe `RESET` button to boot the new firmware.
+The board restarts into the new firmware when flashing completes.
 
 Once this firmware runs, the ESP32-S3 must be put into the
-bootloader by hand before it can be flashed again. Hold the `BOOT`
-button while attaching power.
+bootloader before it can be flashed again. Hold the `BOOT` button
+while attaching power.
 
 ## Running
 When connected, this usbserial firmware will create two serial ports.
