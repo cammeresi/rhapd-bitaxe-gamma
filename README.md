@@ -111,6 +111,32 @@ and the serial number.
 	- data to write. variable length. See below
 ```
 
+**Response Packet Format**
+
+Every command (except System) produces a response with the
+command ID echoed back so the host can match responses to
+requests.
+
+| 0      | 1      | 2  | 3    | 4... |
+|--------|--------|----|------|------|
+| LEN LO | LEN HI | ID | CODE | DATA |
+
+```
+0-1. length (u16 LE)
+	- total packet length, same convention as commands
+2. command id
+	- echoed from the request, or 0xFF if the command
+	  could not be parsed
+3. status code
+	- 0x00: Success (DATA contains the response payload)
+	- 0x10: Timeout
+	- 0x11: Invalid command
+	- 0x12: Buffer overflow
+	- 0xFF: Error with message (DATA contains ASCII text)
+4+. data
+	- response payload or error message, varies by command
+```
+
 **I2C**
 
 Commands:
