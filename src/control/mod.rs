@@ -1,6 +1,6 @@
 use defmt::info;
 
-use embassy_futures::join::join;
+use embassy_futures::select::select;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
 use embassy_time::{Duration, TimeoutError};
 use embassy_usb::{
@@ -166,7 +166,7 @@ pub async fn usb_task(
     loop {
         rx.wait_connection().await;
         info!("Control: Connected");
-        let _ = join(pipe_usb_read(&mut rx), controller.run()).await;
+        let _ = select(pipe_usb_read(&mut rx), controller.run()).await;
         info!("Control: Disconnected");
     }
 }
