@@ -1,0 +1,213 @@
+#!/usr/bin/env python3
+"""Put the Bitaxe into the ROM bootloader, or reset it out of one.
+
+    board bootloader    reboot RHAP-D into the ROM bootloader; no-op
+                        when the bootloader is already up
+    board reset         reset a board in the ROM bootloader into its
+                        firmware, through the RTC watchdog
+
+espflash can do the second step itself only when the board entered
+the bootloader with the BOOT button held. This tool has no such
+restriction, so a flash from a running RHAP-D needs no button.
+"""
+
+import glob
+import os
+import select
+import signal
+import struct
+import sys
+import termios
+import time
+
+RHAPD = ("1209", "6102")
+ROM_BOOTLOADER = ("303a", "1001")
+
+# RHAP-D control protocol: System page, reboot to bootloader.
+REBOOT_TO_BOOTLOADER = bytes.fromhex("0a 00 00 00 09 02 b0 07 10 ad")
+
+# ROM serial protocol, as documented for esptool:
+# https://docs.espressif.com/projects/esptool/en/latest/esp32s3/advanced-topics/serial-protocol.html
+SLIP_END = 0xC0
+SLIP_ESC = 0xDB
+OP_SYNC = 0x08
+OP_WRITE_REG = 0x09
+SYNC_PAYLOAD = b"\x07\x07\x12\x20" + b"\x55" * 32
+
+# ESP32-S3 RTC watchdog, per the RTC_CNTL chapter of the ESP32-S3
+# Technical Reference Manual. WDTWPROTECT unlocks the others on the
+# key and locks them on any other value. WDTCONFIG1 holds the stage
+# 0 timeout. The values are the ones esptool writes for its
+# watchdog reset; its stage 0 action of 5 is outside the documented
+# 1 to 4, and the reset that fires is the chip reset of bit 8.
+RTC_CNTL_BASE = 0x6000_8000
+RTC_CNTL_WDTCONFIG0 = RTC_CNTL_BASE + 0x0098
+RTC_CNTL_WDTCONFIG1 = RTC_CNTL_BASE + 0x009C
+RTC_CNTL_WDTWPROTECT = RTC_CNTL_BASE + 0x00B0
+RTC_CNTL_WDT_WKEY = 0x50D8_3AA1
+RTC_CNTL_WDT_EN = 1 << 31
+RTC_CNTL_WDT_STG0 = 5 << 28
+RTC_CNTL_WDT_CHIP_RESET_EN = 1 << 8
+RTC_CNTL_WDT_CHIP_RESET_WIDTH = 2 << 0
+WDT_ARM = (
+    RTC_CNTL_WDT_EN
+    | RTC_CNTL_WDT_STG0
+    | RTC_CNTL_WDT_CHIP_RESET_EN
+    | RTC_CNTL_WDT_CHIP_RESET_WIDTH
+)
+WDT_TIMEOUT = 2000
+
+
+def ports():
+    """Yield (device path, (vid, pid), interface number) for each CDC port."""
+    for tty in sorted(glob.glob("/sys/class/tty/ttyACM*")):
+        iface = os.path.realpath(tty + "/device")
+        usb = os.path.dirname(iface)
+        try:
+            vid = read(usb + "/idVendor")
+            pid = read(usb + "/idProduct")
+            num = read(iface + "/bInterfaceNumber")
+        except OSError:
+            continue
+        yield "/dev/" + os.path.basename(tty), (vid, pid), num
+
+
+def read(path):
+    with open(path) as f:
+        return f.read().strip()
+
+
+def find(ident, interface="00"):
+    for dev, found, num in ports():
+        if found == ident and num == interface:
+            return dev
+    return None
+
+
+def open_raw(dev):
+    fd = os.open(dev, os.O_RDWR | os.O_NOCTTY | os.O_NONBLOCK)
+    attr = termios.tcgetattr(fd)
+    attr[0] = 0
+    attr[1] = 0
+    attr[2] = termios.CS8 | termios.CREAD | termios.CLOCAL
+    attr[3] = 0
+    termios.tcsetattr(fd, termios.TCSANOW, attr)
+    termios.tcflush(fd, termios.TCIOFLUSH)
+    return fd
+
+
+def wait_for(ident, timeout):
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        dev = find(ident)
+        if dev:
+            return dev
+        time.sleep(0.1)
+    return None
+
+
+def bootloader():
+    if find(ROM_BOOTLOADER):
+        return
+    control = find(RHAPD)
+    if not control:
+        die("no RHAP-D or ROM bootloader on USB")
+    # A firmware whose control task has died still enumerates but
+    # never answers; do not hang on it.
+    signal.signal(signal.SIGALRM, lambda *_: die("RHAP-D is not answering; power-cycle the board"))
+    signal.alarm(10)
+    fd = open_raw(control)
+    os.write(fd, REBOOT_TO_BOOTLOADER)
+    os.close(fd)
+    if not wait_for(ROM_BOOTLOADER, 5):
+        die("RHAP-D did not come back as the ROM bootloader")
+    signal.alarm(0)
+
+
+def reset():
+    dev = find(ROM_BOOTLOADER)
+    if not dev:
+        die("no ROM bootloader on USB")
+    fd = open_raw(dev)
+    sync(fd)
+    for addr, value in (
+        (RTC_CNTL_WDTWPROTECT, RTC_CNTL_WDT_WKEY),
+        (RTC_CNTL_WDTCONFIG1, WDT_TIMEOUT),
+        (RTC_CNTL_WDTCONFIG0, WDT_ARM),
+        (RTC_CNTL_WDTWPROTECT, 0),
+    ):
+        write_reg(fd, addr, value)
+    os.close(fd)
+
+
+def sync(fd):
+    for _ in range(10):
+        send(fd, OP_SYNC, SYNC_PAYLOAD)
+        if receive(fd, OP_SYNC, 0.1) is not None:
+            break
+    else:
+        die("ROM bootloader did not answer SYNC")
+    # The ROM answers SYNC several times; let the rest arrive and drop
+    # them so the next reply read belongs to the next command.
+    time.sleep(0.2)
+    termios.tcflush(fd, termios.TCIFLUSH)
+
+
+def write_reg(fd, addr, value):
+    send(fd, OP_WRITE_REG, struct.pack("<IIII", addr, value, 0xFFFF_FFFF, 0))
+    status = receive(fd, OP_WRITE_REG, 1.0)
+    if status is None:
+        die(f"no reply to WRITE_REG {addr:#010x}")
+    if status[0] != 0:
+        die(f"WRITE_REG {addr:#010x} failed: status {status.hex(' ')}")
+
+
+def send(fd, op, payload):
+    frame = struct.pack("<BBHI", 0, op, len(payload), 0) + payload
+    encoded = frame.replace(b"\xdb", b"\xdb\xdd").replace(b"\xc0", b"\xdb\xdc")
+    os.write(fd, bytes([SLIP_END]) + encoded + bytes([SLIP_END]))
+
+
+def receive(fd, op, timeout):
+    """Return the status bytes of the next reply to op, or None."""
+    deadline = time.monotonic() + timeout
+    buf = b""
+    while time.monotonic() < deadline:
+        ready, _, _ = select.select([fd], [], [], deadline - time.monotonic())
+        if not ready:
+            break
+        buf += os.read(fd, 4096)
+        while True:
+            start = buf.find(bytes([SLIP_END]))
+            if start < 0:
+                buf = b""
+                break
+            end = buf.find(bytes([SLIP_END]), start + 1)
+            if end < 0:
+                buf = buf[start:]
+                break
+            frame = buf[start + 1 : end].replace(b"\xdb\xdc", b"\xc0").replace(b"\xdb\xdd", b"\xdb")
+            buf = buf[end + 1 :]
+            if len(frame) < 8:
+                continue
+            direction, reply_op, size, _value = struct.unpack("<BBHI", frame[:8])
+            if direction == 1 and reply_op == op:
+                return frame[8 : 8 + size]
+    return None
+
+
+def die(message):
+    print(f"board: {message}", file=sys.stderr)
+    sys.exit(1)
+
+
+def main():
+    commands = {"bootloader": bootloader, "reset": reset}
+    if len(sys.argv) != 2 or sys.argv[1] not in commands:
+        print(__doc__.strip(), file=sys.stderr)
+        sys.exit(2)
+    commands[sys.argv[1]]()
+
+
+if __name__ == "__main__":
+    main()

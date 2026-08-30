@@ -59,15 +59,11 @@ just build
 just flash
 ```
 
-Once the firmware runs, the ESP32-S3 must be put into the
-bootloader before it can be flashed again. Either send the System
-"reboot to bootloader" command over the control serial port, or
+The recipe puts a running RHAP-D into the ROM bootloader through
+the System "reboot to bootloader" command, flashes, and resets the
+board into the new firmware, with no buttons pressed. A board
+running anything else must be put into the bootloader by hand:
 hold the `BOOT` button while attaching power.
-
-After a flash that began with the `BOOT` button, the board restarts
-into the new firmware by itself. After one that began with the
-command, press `RESET`; espflash declines to reset a board that
-entered the bootloader without the button.
 
 ## Running
 When connected, this usbserial firmware will create two serial ports.

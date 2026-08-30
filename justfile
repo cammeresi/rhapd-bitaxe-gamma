@@ -49,7 +49,9 @@ build:
 # Build and flash the release firmware over USB
 [group('dev')]
 flash: (_require "cargo-espflash")
-    cargo espflash flash --release --chip esp32s3 --after watchdog-reset
+    tools/board bootloader
+    cargo espflash flash --release --chip esp32s3 --after no-reset
+    tools/board reset
 
 [private]
 _require tool:
