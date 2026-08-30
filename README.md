@@ -73,6 +73,8 @@ ADC. The second serial port is "data serial" and is pass through UART.
 After startup, the ASIC is held in reset by GPIO RST_N, and the
 firmware turns the TPS546 core voltage rail off, to minimize heat
 and power until the host is connected and ready to use the ASIC.
+The display shows the firmware name, the commit it was built from,
+and the serial number.
 
 ### Data Serial
 - Second serial port

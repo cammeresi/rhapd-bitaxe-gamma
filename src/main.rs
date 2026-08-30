@@ -2,6 +2,8 @@
 #![no_main]
 #![feature(trivial_bounds)]
 
+use core::fmt::Write;
+
 use defmt::unwrap;
 use panic_rtt_target as _;
 
@@ -14,6 +16,7 @@ use esp_hal::{analog::adc, clock::CpuClock, gpio, i2c, timer::systimer::SystemTi
 use static_cell::StaticCell;
 
 mod control;
+mod display;
 mod emc2101;
 mod tps546;
 mod uart;
@@ -61,12 +64,14 @@ async fn main(spawner: Spawner) {
 
     //esp_alloc::heap_allocator!(size: 72 * 1024);
 
+    let serial = serial_number();
+
     let usb_config = {
         let mut config = embassy_usb::Config::new(VID, PID);
         config.device_release = VERSION;
         config.manufacturer = Some(MANUFACTURER);
         config.product = Some(PRODUCT);
-        config.serial_number = Some(serial_number());
+        config.serial_number = Some(serial);
         config.max_power = 100;
         config.max_packet_size_0 = 64;
         config.device_class = 0xef;
@@ -118,11 +123,13 @@ async fn main(spawner: Spawner) {
         let config = esp_hal::i2c::master::Config::default();
         let sda = p.GPIO47;
         let scl = p.GPIO48;
-        i2c::master::I2c::new(p.I2C0, config)
+        let i2c = i2c::master::I2c::new(p.I2C0, config)
             .unwrap()
             .with_sda(sda)
-            .with_scl(scl)
-            .into_async()
+            .with_scl(scl);
+        let mut serial_line = heapless::String::<16>::new();
+        let _ = write!(serial_line, "s/n {serial}");
+        display::show(i2c, concat!("RHAP-D g", env!("GIT_HASH")), &serial_line).into_async()
     };
 
     let rail = tps546::turn_off(&mut i2c).await;
