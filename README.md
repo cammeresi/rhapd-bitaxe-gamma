@@ -25,7 +25,8 @@ The build needs rustup and [just]. Install rustup from
 cargo install just --locked
 ```
 
-Run `just` with no arguments to list the recipes.
+Run `just` with no arguments to list the recipes. Run `just checks`
+before committing; it runs rustfmt and clippy.
 
 [just]: https://just.systems/
 [rustup.rs]: https://rustup.rs/

@@ -27,6 +27,18 @@ setup-tools:
         RUSTUP_TOOLCHAIN=stable cargo install --locked cargo-espflash --version {{ESPFLASH_VERSION}}; \
     fi
 
+[group('dev')]
+fmt *args:
+    cargo fmt {{args}}
+
+[group('dev')]
+lint:
+    cargo clippy --release -- -D warnings
+
+# Run all checks (before commit, push, merge, release)
+[group('dev')]
+@checks: (fmt "--check") lint
+
 # Build the release firmware
 [group('dev')]
 build:
