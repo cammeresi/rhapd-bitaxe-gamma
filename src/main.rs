@@ -73,7 +73,14 @@ async fn main(spawner: Spawner) {
         static BOS_DESCRIPTOR: StaticCell<[u8; 256]> = StaticCell::new();
         static CONTROL_BUF: StaticCell<[u8; 64]> = StaticCell::new();
 
-        embassy_usb::Builder::new(usb_driver, usb_config, CONFIG_DESCRIPTOR.init([0; 256]), BOS_DESCRIPTOR.init([0; 256]), &mut [], CONTROL_BUF.init([0; 64]))
+        embassy_usb::Builder::new(
+            usb_driver,
+            usb_config,
+            CONFIG_DESCRIPTOR.init([0; 256]),
+            BOS_DESCRIPTOR.init([0; 256]),
+            &mut [],
+            CONTROL_BUF.init([0; 64]),
+        )
     };
 
     let control_class = {
@@ -89,15 +96,25 @@ async fn main(spawner: Spawner) {
     };
 
     let asic_uart = {
-        let config = esp_hal::uart::Config::default().with_baudrate(115200).with_rx(esp_hal::uart::RxConfig::default().with_fifo_full_threshold(64));
-        esp_hal::uart::Uart::new(p.UART1, config).unwrap().with_rx(p.GPIO18).with_tx(p.GPIO17).into_async()
+        let config = esp_hal::uart::Config::default()
+            .with_baudrate(115200)
+            .with_rx(esp_hal::uart::RxConfig::default().with_fifo_full_threshold(64));
+        esp_hal::uart::Uart::new(p.UART1, config)
+            .unwrap()
+            .with_rx(p.GPIO18)
+            .with_tx(p.GPIO17)
+            .into_async()
     };
 
     let i2c = {
         let config = esp_hal::i2c::master::Config::default();
         let sda = p.GPIO47;
         let scl = p.GPIO48;
-        i2c::master::I2c::new(p.I2C0, config).unwrap().with_sda(sda).with_scl(scl).into_async()
+        i2c::master::I2c::new(p.I2C0, config)
+            .unwrap()
+            .with_sda(sda)
+            .with_scl(scl)
+            .into_async()
     };
 
     let gpio_pins = control::gpio::Pins {

@@ -24,7 +24,10 @@ impl Command {
 }
 
 impl super::ControllerCommand for Command {
-    async fn handle(&self, controller: &mut super::Controller) -> Result<Vec<u8, 256>, CommandError> {
+    async fn handle(
+        &self,
+        controller: &mut super::Controller,
+    ) -> Result<Vec<u8, 256>, CommandError> {
         let level = match self {
             Command::GetAsicResetn => bool::from(controller.gpio.asic_resetn.output_level()),
             Command::SetAsicResetn { level } => {

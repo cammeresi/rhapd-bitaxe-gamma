@@ -36,7 +36,10 @@ fn adc_read_error() -> CommandError {
 }
 
 impl super::ControllerCommand for Command {
-    async fn handle(&self, controller: &mut super::Controller) -> Result<Vec<u8, 256>, CommandError> {
+    async fn handle(
+        &self,
+        controller: &mut super::Controller,
+    ) -> Result<Vec<u8, 256>, CommandError> {
         let adc = &mut controller.adc.adc;
 
         let value = match self {

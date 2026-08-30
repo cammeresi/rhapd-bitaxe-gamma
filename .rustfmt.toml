@@ -1,5 +1,5 @@
 edition = "2021"
 imports_granularity = "crate"
-max_width = 256
+max_width = 100
 use_try_shorthand = true
 hex_literal_case = "Lower"

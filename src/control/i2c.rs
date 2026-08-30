@@ -6,10 +6,22 @@ use super::CommandError;
 
 #[derive(defmt::Format)]
 pub enum Command {
-    SetFrequency { frequency: u32 },                         // 0x10
-    Write { addr: u8, buf: Vec<u8, 256> },                   // 0x20
-    Read { addr: u8, len: u8 },                              // 0x30
-    WriteRead { addr: u8, buf: Vec<u8, 256>, read_len: u8 }, // 0x40
+    SetFrequency {
+        frequency: u32,
+    }, // 0x10
+    Write {
+        addr: u8,
+        buf: Vec<u8, 256>,
+    }, // 0x20
+    Read {
+        addr: u8,
+        len: u8,
+    }, // 0x30
+    WriteRead {
+        addr: u8,
+        buf: Vec<u8, 256>,
+        read_len: u8,
+    }, // 0x40
 }
 
 impl Command {
@@ -22,7 +34,10 @@ impl Command {
                 addr: *addr,
                 buf: Vec::from_slice(buf).map_err(|_| CommandError::BufferOverflow)?,
             }),
-            [0x30, addr, len] => Ok(Self::Read { addr: *addr, len: *len }),
+            [0x30, addr, len] => Ok(Self::Read {
+                addr: *addr,
+                len: *len,
+            }),
             [0x40, addr, buf @ .., read_len] => Ok(Self::WriteRead {
                 addr: *addr,
                 buf: Vec::from_slice(buf).map_err(|_| CommandError::BufferOverflow)?,
@@ -34,29 +49,52 @@ impl Command {
 }
 
 impl super::ControllerCommand for Command {
-    async fn handle(&self, controller: &mut super::Controller) -> Result<Vec<u8, 256>, CommandError> {
+    async fn handle(
+        &self,
+        controller: &mut super::Controller,
+    ) -> Result<Vec<u8, 256>, CommandError> {
         match self {
             Command::SetFrequency { frequency } => {
-                let config = esp_hal::i2c::master::Config::default().with_frequency(Rate::from_hz(*frequency));
-                controller.i2c.set_config(&config).map_err(|_| CommandError::Message("I2C Set Frequency Error"))?;
+                let config = esp_hal::i2c::master::Config::default()
+                    .with_frequency(Rate::from_hz(*frequency));
+                controller
+                    .i2c
+                    .set_config(&config)
+                    .map_err(|_| CommandError::Message("I2C Set Frequency Error"))?;
                 Ok(Vec::from_slice(&frequency.to_le_bytes()).unwrap())
             }
             Command::Write { addr, buf } => {
-                controller.i2c.write_async(*addr, buf).await.map_err(|_| CommandError::Message("I2C Write Error"))?;
+                controller
+                    .i2c
+                    .write_async(*addr, buf)
+                    .await
+                    .map_err(|_| CommandError::Message("I2C Write Error"))?;
                 Ok(Vec::from_slice(&[buf.len() as u8]).unwrap())
             }
 
             Command::Read { addr, len } => {
                 let mut buf = Vec::new();
                 let _ = buf.resize_default(*len as usize);
-                controller.i2c.read_async(*addr, &mut buf).await.map_err(|_| CommandError::Message("I2C Read Error"))?;
+                controller
+                    .i2c
+                    .read_async(*addr, &mut buf)
+                    .await
+                    .map_err(|_| CommandError::Message("I2C Read Error"))?;
                 Ok(buf)
             }
 
-            Command::WriteRead { addr, buf, read_len } => {
+            Command::WriteRead {
+                addr,
+                buf,
+                read_len,
+            } => {
                 let mut read_buf = Vec::new();
                 let _ = read_buf.resize_default(*read_len as usize);
-                controller.i2c.write_read_async(*addr, buf, &mut read_buf[0..*read_len as usize]).await.map_err(|_| CommandError::Message("I2C WriteRead Error"))?;
+                controller
+                    .i2c
+                    .write_read_async(*addr, buf, &mut read_buf[0..*read_len as usize])
+                    .await
+                    .map_err(|_| CommandError::Message("I2C WriteRead Error"))?;
                 Ok(read_buf)
             }
         }

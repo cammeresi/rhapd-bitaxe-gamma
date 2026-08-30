@@ -122,7 +122,8 @@ impl Controller {
             let buf = match res {
                 Ok(res) => {
                     let mut buf = Vec::<u8, 260>::new();
-                    buf.extend_from_slice(&(res.len() as u16).to_le_bytes()).unwrap();
+                    buf.extend_from_slice(&(res.len() as u16).to_le_bytes())
+                        .unwrap();
                     buf.push(cmd.id as u8).unwrap();
                     buf.extend_from_slice(&res).unwrap();
                     buf
@@ -140,7 +141,12 @@ impl Controller {
 }
 
 #[embassy_executor::task]
-pub async fn usb_task(class: CdcAcmClass<'static, super::UsbDriver>, i2c: super::I2cDriver, gpio: gpio::Pins<'static>, adc: adc::Pins<'static>) -> ! {
+pub async fn usb_task(
+    class: CdcAcmClass<'static, super::UsbDriver>,
+    i2c: super::I2cDriver,
+    gpio: gpio::Pins<'static>,
+    adc: adc::Pins<'static>,
+) -> ! {
     let (tx, mut rx, mut _ctrl) = class.split_with_control();
     let mut controller = Controller { tx, i2c, gpio, adc };
 
@@ -165,7 +171,9 @@ impl From<EndpointError> for ControlTaskError {
     }
 }
 
-async fn pipe_usb_read(rx: &mut Receiver<'static, super::UsbDriver>) -> Result<(), ControlTaskError> {
+async fn pipe_usb_read(
+    rx: &mut Receiver<'static, super::UsbDriver>,
+) -> Result<(), ControlTaskError> {
     let mut buf = [0; 4098];
 
     loop {
@@ -186,7 +194,15 @@ async fn pipe_usb_read(rx: &mut Receiver<'static, super::UsbDriver>) -> Result<(
 
                             match Command::from_bytes(&buf[2..to_read]) {
                                 Ok(cmd) => COMMAND_CHANNEL.send(cmd).await,
-                                Err(err) => COMMAND_CHANNEL.send(Command { id: -1, bus: 0, inner: CommandInner::Error(err) }).await,
+                                Err(err) => {
+                                    COMMAND_CHANNEL
+                                        .send(Command {
+                                            id: -1,
+                                            bus: 0,
+                                            inner: CommandInner::Error(err),
+                                        })
+                                        .await
+                                }
                             }
 
                             let mut new_buf = [0; 4098];

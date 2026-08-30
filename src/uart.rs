@@ -49,7 +49,10 @@ impl From<ConfigError> for UartTaskError {
 }
 
 #[embassy_executor::task]
-pub async fn usb_task(class: CdcAcmClass<'static, super::UsbDriver>, uart: Uart<'static, Async>) -> ! {
+pub async fn usb_task(
+    class: CdcAcmClass<'static, super::UsbDriver>,
+    uart: Uart<'static, Async>,
+) -> ! {
     let (mut tx, mut rx, mut ctrl) = class.split_with_control();
 
     let (mut uart_rx, mut uart_tx) = uart.split();
