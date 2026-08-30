@@ -8,11 +8,13 @@ use panic_rtt_target as _;
 esp_bootloader_esp_idf::esp_app_desc!();
 
 use embassy_executor::Spawner;
+use embassy_time::Timer;
 use embassy_usb::class::cdc_acm::{CdcAcmClass, State};
 use esp_hal::{analog::adc, clock::CpuClock, gpio, i2c, timer::systimer::SystemTimer};
 use static_cell::StaticCell;
 
 mod control;
+mod emc2101;
 mod tps546;
 mod uart;
 
@@ -123,8 +125,19 @@ async fn main(spawner: Spawner) {
             .into_async()
     };
 
-    if let Err(e) = tps546::turn_off(&mut i2c).await {
-        defmt::warn!("TPS546: core rail not turned off: {:?}", e);
+    let rail = tps546::turn_off(&mut i2c).await;
+    // A write to the EMC2101 straight after the TPS546 turn-off lands
+    // in the wrong register. Give the regulator time to finish.
+    Timer::after_millis(10).await;
+    let fan = match rail {
+        Ok(()) => emc2101::turn_off_fan(&mut i2c).await,
+        Err(e) => {
+            defmt::warn!("TPS546: core rail not turned off: {:?}", e);
+            emc2101::turn_on_fan(&mut i2c).await
+        }
+    };
+    if let Err(e) = fan {
+        defmt::warn!("EMC2101: fan not set: {:?}", e);
     }
 
     let gpio_pins = control::gpio::Pins {
